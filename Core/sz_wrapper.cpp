@@ -15,7 +15,10 @@
 #include <vector>
 
 #if defined(__APPLE__)
+#include <TargetConditionals.h>
+#if TARGET_OS_IPHONE
 #include <os/proc.h>
+#endif
 #include <sys/sysctl.h>
 #endif
 
@@ -27,6 +30,7 @@
 #include "../third_party/7zip/CPP/Common/UTFConvert.h"
 #include "../third_party/7zip/CPP/Windows/ErrorMsg.h"
 #include "../third_party/7zip/CPP/7zip/UI/Common/ExitCode.h"
+#include "../third_party/7zip/CPP/7zip/UI/Common/ArchiveCommandLine.h"
 #include "../third_party/7zip/CPP/7zip/UI/Console/ConsoleClose.h"
 #include "../third_party/7zip/CPP/7zip/UI/Console/PercentPrinter.h"
 #include "../third_party/7zip/CPP/7zip/UI/Console/UserInputUtils.h"
@@ -144,7 +148,7 @@ static void progress_bridge(UInt64 completed, UInt64 total, UInt64 files, const 
     if (fileName && fileName[0]) {
         UString u(fileName);
         AString a;
-        Convert_UString_to_AString(u, a);
+        ConvertUnicodeToUTF8(u, a);
         utf8_name = a.Ptr();
     }
     info.current_file = utf8_name.c_str();
@@ -198,7 +202,7 @@ static int overwrite_bridge(const wchar_t* existName, const wchar_t* newName) {
     if (existName) {
         UString u(existName);
         AString a;
-        Convert_UString_to_AString(u, a);
+        ConvertUnicodeToUTF8(u, a);
         exist_str = a.Ptr();
     }
 
@@ -206,7 +210,7 @@ static int overwrite_bridge(const wchar_t* existName, const wchar_t* newName) {
     if (newName) {
         UString u(newName);
         AString a;
-        Convert_UString_to_AString(u, a);
+        ConvertUnicodeToUTF8(u, a);
         new_str = a.Ptr();
     }
 
@@ -284,7 +288,7 @@ int sz_run(int argc, const char* const* argv, const sz_callbacks* cb) {
     }
     catch (const CMessagePathException &e) {
         AString a;
-        Convert_UString_to_AString(e, a);
+        ConvertUnicodeToUTF8(e, a);
         if (cb && cb->on_error) {
             cb->on_error(a.Ptr(), 0, cb->user_data);
         }
@@ -297,7 +301,10 @@ int sz_run(int argc, const char* const* argv, const sz_callbacks* cb) {
             res = SZ_USER_STOPPED;
         } else {
             if (cb && cb->on_error) {
-                cb->on_error(NWindows::NError::MyFormatMessage(se.ErrorCode), 0, cb->user_data);
+                UString errU = NWindows::NError::MyFormatMessage(se.ErrorCode);
+                AString errA;
+                ConvertUnicodeToUTF8(errU, errA);
+                cb->on_error(errA.Ptr(), 0, cb->user_data);
             }
             res = SZ_FATAL_ERROR;
         }
@@ -307,7 +314,7 @@ int sz_run(int argc, const char* const* argv, const sz_callbacks* cb) {
     }
     catch (const UString &s) {
         AString a;
-        Convert_UString_to_AString(s, a);
+        ConvertUnicodeToUTF8(s, a);
         if (cb && cb->on_error) {
             cb->on_error(a.Ptr(), 0, cb->user_data);
         }
@@ -385,7 +392,7 @@ int sz_run_async(int argc, const char* const* argv, const sz_callbacks* cb) {
     pthread_t th;
     pthread_attr_t attr;
     pthread_attr_init(&attr);
-    // iOS stack size minimum 8 MB as required by section 2.3
+    // iOS stack size minimum 8 MB as required by Section 2.3
     pthread_attr_setstacksize(&attr, 8 * 1024 * 1024);
 
     int err = pthread_create(&th, &attr, async_worker_thread, args);
@@ -410,10 +417,12 @@ int sz_is_cancelled(void) {
 
 uint64_t sz_get_available_memory(void) {
 #if defined(__APPLE__)
-    if (__builtin_available(iOS 13.0, macOS 10.15, *)) {
+#if TARGET_OS_IPHONE
+    if (__builtin_available(iOS 13.0, tvOS 13.0, watchOS 6.0, *)) {
         size_t avail = os_proc_available_memory();
         if (avail > 0) return (uint64_t)avail;
     }
+#endif
     int mib[2] = { CTL_HW, HW_MEMSIZE };
     uint64_t total = 0;
     size_t len = sizeof(total);

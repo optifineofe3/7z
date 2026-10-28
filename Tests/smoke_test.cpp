@@ -80,29 +80,39 @@ int main() {
     // Clean previous test artifacts
     system("rm -rf test_env");
     mkdir("test_env", 0755);
-    mkdir("test_env/input", 0755);
 
     const char* sample_text_1 = "7-Zip iOS Port: Pristine Core Verification 2026. UTF-8 Тестовые данные на русском языке 🚀📦.";
     const char* sample_text_2 = "Another sample payload with numbers 1234567890 and symbols !@#$%^&*()_+";
 
-    create_test_file("test_env/input/sample1.txt", sample_text_1);
-    create_test_file("test_env/input/sample2.txt", sample_text_2);
+    create_test_file("test_env/sample1.txt", sample_text_1);
+    create_test_file("test_env/sample2.txt", sample_text_2);
+
+    // Save current working directory
+    char orig_cwd[1024];
+    if (!getcwd(orig_cwd, sizeof(orig_cwd))) {
+        strcpy(orig_cwd, ".");
+    }
+
+    if (chdir("test_env") != 0) {
+        fprintf(stderr, "Cannot chdir to test_env\n");
+        return 1;
+    }
 
     // 1. Test 7z roundtrip with LZMA2, mx=7, md=64m, mhe=on, password
     {
         printf("\n>>> Test 1: 7z format (LZMA2, mx=7, md=64m, mhe=on, password)\n");
         const char* compress_args[] = {
-            "7zz", "a", "test_env/test.7z", "test_env/input/*",
+            "7zz", "a", "test.7z", "sample1.txt", "sample2.txt",
             "-m0=lzma2", "-mx=7", "-md=64m", "-mhe=on", "-pTestSecretKey123", "-y"
         };
-        int code = run_cmd(10, compress_args);
+        int code = run_cmd(11, compress_args);
         if (code != SZ_OK) {
             fprintf(stderr, "Test 1 7z compression failed with code: %d\n", code);
             return 1;
         }
 
         const char* extract_args[] = {
-            "7zz", "x", "test_env/test.7z", "-otest_env/out_7z", "-pTestSecretKey123", "-y"
+            "7zz", "x", "test.7z", "-oout_7z", "-pTestSecretKey123", "-y"
         };
         code = run_cmd(6, extract_args);
         if (code != SZ_OK) {
@@ -110,8 +120,8 @@ int main() {
             return 1;
         }
 
-        if (!verify_file_content("test_env/out_7z/sample1.txt", sample_text_1) ||
-            !verify_file_content("test_env/out_7z/sample2.txt", sample_text_2)) {
+        if (!verify_file_content("out_7z/sample1.txt", sample_text_1) ||
+            !verify_file_content("out_7z/sample2.txt", sample_text_2)) {
             fprintf(stderr, "Test 1 file content mismatch after 7z extraction!\n");
             return 1;
         }
@@ -122,17 +132,17 @@ int main() {
     {
         printf("\n>>> Test 2: ZIP format with AES encryption\n");
         const char* compress_args[] = {
-            "7zz", "a", "test_env/test.zip", "test_env/input/*",
+            "7zz", "a", "test.zip", "sample1.txt", "sample2.txt",
             "-tzip", "-mem=AES256", "-pZipSecretPass456", "-y"
         };
-        int code = run_cmd(8, compress_args);
+        int code = run_cmd(9, compress_args);
         if (code != SZ_OK) {
             fprintf(stderr, "Test 2 ZIP compression failed with code: %d\n", code);
             return 1;
         }
 
         const char* extract_args[] = {
-            "7zz", "x", "test_env/test.zip", "-otest_env/out_zip", "-pZipSecretPass456", "-y"
+            "7zz", "x", "test.zip", "-oout_zip", "-pZipSecretPass456", "-y"
         };
         code = run_cmd(6, extract_args);
         if (code != SZ_OK) {
@@ -140,8 +150,8 @@ int main() {
             return 1;
         }
 
-        if (!verify_file_content("test_env/out_zip/sample1.txt", sample_text_1) ||
-            !verify_file_content("test_env/out_zip/sample2.txt", sample_text_2)) {
+        if (!verify_file_content("out_zip/sample1.txt", sample_text_1) ||
+            !verify_file_content("out_zip/sample2.txt", sample_text_2)) {
             fprintf(stderr, "Test 2 file content mismatch after ZIP extraction!\n");
             return 1;
         }
@@ -172,8 +182,10 @@ int main() {
         printf("[OK] Test 4: Info command passed.\n");
     }
 
-    // Clean up
+    // Restore working directory
+    chdir(orig_cwd);
     system("rm -rf test_env");
+
     printf("\n=========================================\n");
     printf("   ALL 7-ZIP CORE SMOKE TESTS PASSED!    \n");
     printf("=========================================\n");
