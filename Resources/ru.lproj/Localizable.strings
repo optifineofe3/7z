@@ -1,0 +1,169 @@
+/* Russian Localization */
+
+/* Вкладки */
+"tab_archives" = "Архивы";
+"tab_tasks" = "Задачи";
+"tab_tools" = "Инструменты";
+"tab_settings" = "Настройки";
+
+/* Главный экран */
+"app_title" = "7-Zip";
+"create_archive_btn" = "Создать архив";
+"open_archive_btn" = "Открыть архив";
+"recent_archives" = "Недавние архивы";
+"clear_recent" = "Очистить список";
+"no_recent_archives" = "Нет недавних архивов";
+"quick_benchmark" = "Быстрый бенчмарк";
+
+/* Диалог создания архива */
+"create_archive_title" = "Добавить к архиву";
+"btn_compress" = "Сжать";
+"btn_cancel" = "Отмена";
+"section_general" = "Основное";
+"archive_name" = "Имя архива";
+"destination_folder" = "Папка назначения";
+"choose_folder" = "Выбрать...";
+"default_folder" = "Песочница (Документы)";
+"archive_format" = "Формат архива";
+"compression_level" = "Уровень сжатия";
+"compression_method" = "Метод сжатия";
+
+/* Уровни */
+"level_store" = "0 - Без сжатия";
+"level_fastest" = "1 - Скоростной";
+"level_fast" = "3 - Быстрый";
+"level_normal" = "5 - Нормальный";
+"level_maximum" = "7 - Максимальный";
+"level_ultra" = "9 - Ультра";
+
+/* Параметры сжатия */
+"section_compression" = "Параметры сжатия";
+"dict_size" = "Размер словаря";
+"word_size" = "Размер слова";
+"solid_size" = "Размер непрерывного блока";
+"threads_count" = "Число потоков";
+"threads_default" = "Авто (%d потоков)";
+"memory_budget_title" = "Оценка потребления памяти";
+"memory_comp_estimate" = "Для сжатия: ~%@";
+"memory_decomp_estimate" = "Для распаковки: ~%@";
+"memory_warning" = "Внимание: Превышен безопасный лимит Jetsam (%@ доступно). Приложение может быть принудительно закрыто iOS.";
+"btn_auto_reduce" = "Автоматически снизить словарь";
+
+/* Разбиение на тома */
+"section_volumes" = "Разбиение на тома";
+"volume_size" = "Размер тома";
+"vol_none" = "Один том (без разбиения)";
+"vol_custom" = "Пользовательский размер...";
+
+/* Режимы обновления и путей */
+"section_update_paths" = "Режим обновления и пути";
+"update_mode" = "Режим обновления";
+"path_mode" = "Пути файлов";
+"update_add_replace" = "Добавить с заменой";
+"update_update_add" = "Обновить и добавить";
+"update_freshen" = "Освежить существующие";
+"update_synchronize" = "Синхронизировать";
+"path_relative" = "Относительные пути";
+"path_full" = "Полные пути";
+"path_absolute" = "Абсолютные пути";
+
+/* Опции */
+"preserve_timestamps" = "Сохранять временные метки";
+"preserve_symlinks" = "Сохранять символические ссылки";
+"recursive" = "Рекурсивно по подпапкам";
+"exclude_mask" = "Исключить по маске (-x)";
+"include_mask" = "Включить по маске";
+
+/* Шифрование */
+"section_encryption" = "Шифрование";
+"password" = "Пароль";
+"confirm_password" = "Подтверждение пароля";
+"show_password" = "Показать пароль";
+"encrypt_headers" = "Шифровать имена файлов (-mhe)";
+"encryption_method" = "Метод шифрования";
+"passwords_mismatch" = "Пароли не совпадают";
+
+/* Дополнительно и пресеты */
+"section_advanced" = "Дополнительно и параметры";
+"custom_parameters" = "Параметры";
+"presets_title" = "Пресеты настроек";
+"preset_fast" = "Быстро";
+"preset_normal" = "Обычный";
+"preset_maximum" = "Максимум";
+"preset_max_encrypted" = "Максимум + шифрование";
+"save_preset" = "Сохранить как пресет";
+"resulting_cli" = "Командная строка 7-Zip";
+
+/* Обозреватель архива */
+"items_count" = "%d объектов";
+"selected_count" = "Выбрано: %d";
+"search_placeholder" = "Поиск файлов...";
+"sort_name" = "Имя";
+"sort_size" = "Размер";
+"sort_date" = "Дата";
+"sort_packed" = "Сжатый размер";
+"btn_extract" = "Распаковать";
+"btn_test" = "Тест";
+"btn_info" = "Свойства";
+"btn_delete" = "Удалить";
+"btn_share" = "Поделиться";
+"archive_info" = "Информация об архиве";
+"test_archive" = "Проверка целостности";
+"delete_confirm" = "Удалить выбранные файлы из архива?";
+"confirm_btn" = "Подтвердить";
+
+/* Диалог распаковки */
+"extract_title" = "Распаковка архива";
+"extract_to" = "Распаковать в";
+"extract_full_paths" = "Сохранять структуру каталогов";
+"overwrite_policy" = "Перезапись существующих файлов";
+"overwrite_ask" = "Спрашивать подтверждение";
+"overwrite_replace" = "Перезаписывать все";
+"overwrite_skip" = "Пропускать существующие";
+"overwrite_rename" = "Автопереименование";
+"enter_password_prompt" = "Архив защищён паролем. Введите пароль:";
+
+/* Очередь задач */
+"tasks_title" = "Очередь задач";
+"task_active" = "Выполняется";
+"task_queued" = "В очереди";
+"task_completed" = "Завершено";
+"task_failed" = "Ошибка";
+"task_cancelled" = "Отменено";
+"btn_cancel_task" = "Отменить";
+"btn_retry_task" = "Повторить";
+"task_logs" = "Журнал операции";
+"copy_log" = "Скопировать журнал";
+"clear_tasks" = "Очистить завершённые";
+
+/* Инструменты */
+"tools_title" = "Инструменты";
+"benchmark_title" = "Бенчмарк 7-Zip";
+"start_benchmark" = "Запустить бенчмарк";
+"iterations" = "Число проходов: %d";
+"mips_rating" = "Рейтинг: %d MIPS";
+"hash_calc_title" = "Вычисление хэшей и контрольных сумм";
+"select_file_hash" = "Выбрать файл...";
+"calculate_hash" = "Вычислить хэш";
+
+/* Настройки */
+"settings_title" = "Настройки";
+"language" = "Язык интерфейса";
+"lang_auto" = "Системный по умолчанию";
+"lang_en" = "English";
+"lang_ru" = "Русский";
+"default_extract_folder" = "Папка распаковки по умолчанию";
+"default_preset" = "Пресет сжатия по умолчанию";
+"default_mem_limit" = "Лимит памяти по умолчанию";
+"auto_clean_temp" = "Авто-очистка временных файлов";
+"clear_cache_now" = "Очистить кэш сейчас";
+"show_hidden_files" = "Показывать скрытые файлы";
+"size_display_format" = "Формат отображения размера";
+"size_binary" = "Двоичный (1024 KiB, MiB)";
+"size_decimal" = "Десятичный (1000 KB, MB)";
+"haptic_feedback" = "Тактильный отклик (Haptics)";
+"dev_mode" = "Режим разработчика";
+"dev_mode_desc" = "Показывать итоговые команды 7-Zip и подробные логи";
+"about_title" = "О программе 7-Zip iOS";
+"license_info" = "Лицензия";
+"source_code" = "Исходный код";

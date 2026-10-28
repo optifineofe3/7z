@@ -64,23 +64,33 @@ static void HandlerRoutine(int)
 {
   if (++g_BreakCounter < kBreakAbortThreshold)
     return;
-  exit(EXIT_FAILURE);
+  // exit(EXIT_FAILURE); // iOS patch: never exit host process
 }
 
 CCtrlHandlerSetter::CCtrlHandlerSetter()
 {
+  #if defined(__APPLE__)
+  // Do not touch signal handlers on Apple/iOS
+  memo_sig_int = SIG_DFL;
+  memo_sig_term = SIG_DFL;
+  #else
   memo_sig_int = signal(SIGINT, HandlerRoutine); // CTRL-C
   if (memo_sig_int == SIG_ERR)
-    throw "SetConsoleCtrlHandler fails (SIGINT)";
+    memo_sig_int = SIG_DFL;
   memo_sig_term = signal(SIGTERM, HandlerRoutine); // for kill -15 (before "kill -9")
   if (memo_sig_term == SIG_ERR)
-    throw "SetConsoleCtrlHandler fails (SIGTERM)";
+    memo_sig_term = SIG_DFL;
+  #endif
 }
 
 CCtrlHandlerSetter::~CCtrlHandlerSetter()
 {
-  signal(SIGINT, memo_sig_int); // CTRL-C
-  signal(SIGTERM, memo_sig_term); // kill {pid}
+  #if !defined(__APPLE__)
+  if (memo_sig_int != SIG_DFL && memo_sig_int != SIG_ERR)
+    signal(SIGINT, memo_sig_int); // CTRL-C
+  if (memo_sig_term != SIG_DFL && memo_sig_term != SIG_ERR)
+    signal(SIGTERM, memo_sig_term); // kill {pid}
+  #endif
 }
 
 #endif // _WIN32

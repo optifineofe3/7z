@@ -6,6 +6,8 @@
 
 #include "PercentPrinter.h"
 
+SZ_ProgressCallback g_sz_progress_callback = NULL;
+
 static const unsigned kPercentsSize = 4;
 
 CPercentPrinter::~CPercentPrinter()
@@ -88,6 +90,11 @@ void CPercentPrinter::GetPercents()
 
 void CPercentPrinter::Print()
 {
+  if (g_sz_progress_callback)
+  {
+    g_sz_progress_callback(Completed, Total, Files, FileName.Ptr());
+  }
+
   if (DisablePrint)
     return;
   DWORD tick = 0;

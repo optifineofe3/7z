@@ -1,0 +1,4 @@
+module SZCore {
+    header "sz_wrapper.h"
+    export *
+}

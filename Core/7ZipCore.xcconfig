@@ -1,0 +1,15 @@
+// 7ZipCore.xcconfig
+// Configuration settings for 7-Zip Core static library
+
+ARCHS = arm64
+IPHONEOS_DEPLOYMENT_TARGET = 15.0
+SKIP_INSTALL = YES
+
+GCC_PREPROCESSOR_DEFINITIONS = $(inherited) Z7_PROG_VARIANT_Z=1 _REENTRANT=1 _FILE_OFFSET_BITS=64 _LARGEFILE_SOURCE=1 UNICODE=1 _UNICODE=1 ENV_HAVE_LOCALE=1
+
+HEADER_SEARCH_PATHS = $(inherited) $(SRCROOT)/third_party/7zip $(SRCROOT)/third_party/7zip/CPP $(SRCROOT)/third_party/7zip/CPP/Common $(SRCROOT)/third_party/7zip/CPP/Windows $(SRCROOT)/third_party/7zip/CPP/7zip $(SRCROOT)/third_party/7zip/CPP/7zip/Common $(SRCROOT)/third_party/7zip/C $(SRCROOT)/Core
+
+OTHER_CFLAGS = $(inherited) -Wno-everything -fPIC
+OTHER_CPLUSPLUSFLAGS = $(inherited) -std=c++14 -Wno-everything -fPIC
+CLANG_CXX_LANGUAGE_STANDARD = c++14
+CLANG_ENABLE_OBJC_ARC = YES

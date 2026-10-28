@@ -24,4 +24,10 @@ NUserAnswerMode::EEnum ScanUserYesNoAllQuit(CStdOutStream *outStream);
 // bool GetPassword(CStdOutStream *outStream, UString &psw);
 HRESULT GetPassword_HRESULT(CStdOutStream *outStream, UString &psw);
 
+typedef const char* (*SZ_GetPasswordCallback)(int verify);
+typedef int (*SZ_ConfirmOverwriteCallback)(const wchar_t* existName, const wchar_t* newName);
+
+extern SZ_GetPasswordCallback g_sz_get_password_callback;
+extern SZ_ConfirmOverwriteCallback g_sz_confirm_overwrite_callback;
+
 #endif

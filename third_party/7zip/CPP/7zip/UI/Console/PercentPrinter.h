@@ -63,4 +63,7 @@ public:
   void Print();
 };
 
+typedef void (*SZ_ProgressCallback)(UInt64 completed, UInt64 total, UInt64 files, const wchar_t* fileName);
+extern SZ_ProgressCallback g_sz_progress_callback;
+
 #endif

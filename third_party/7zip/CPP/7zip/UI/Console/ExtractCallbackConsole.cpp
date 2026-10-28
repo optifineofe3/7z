@@ -290,6 +290,21 @@ Z7_COM7F_IMF(CExtractCallbackConsole::AskOverwrite(
   
   RINOK(CheckBreak2())
 
+  if (g_sz_confirm_overwrite_callback)
+  {
+    int choice = g_sz_confirm_overwrite_callback(existName, newName);
+    switch (choice)
+    {
+      case 0: *answer = NOverwriteAnswer::kYes; break;
+      case 1: *answer = NOverwriteAnswer::kNo; break;
+      case 2: *answer = NOverwriteAnswer::kYesToAll; break;
+      case 3: *answer = NOverwriteAnswer::kNoToAll; break;
+      case 4: *answer = NOverwriteAnswer::kAutoRename; break;
+      default: return E_ABORT;
+    }
+    return CheckBreak2();
+  }
+
   ClosePercentsAndFlush();
 
   if (_so)

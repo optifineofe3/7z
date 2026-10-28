@@ -7,6 +7,9 @@
 
 #include "UserInputUtils.h"
 
+SZ_GetPasswordCallback g_sz_get_password_callback = NULL;
+SZ_ConfirmOverwriteCallback g_sz_confirm_overwrite_callback = NULL;
+
 static const char kYes = 'y';
 static const char kNo = 'n';
 static const char kYesAll = 'a';
@@ -22,6 +25,19 @@ static const char * const kHelpQuestionMessage =
 
 NUserAnswerMode::EEnum ScanUserYesNoAllQuit(CStdOutStream *outStream)
 {
+  if (g_sz_confirm_overwrite_callback)
+  {
+    int ans = g_sz_confirm_overwrite_callback(NULL, NULL);
+    switch (ans)
+    {
+      case 0: return NUserAnswerMode::kYes;
+      case 1: return NUserAnswerMode::kNo;
+      case 2: return NUserAnswerMode::kYesAll;
+      case 3: return NUserAnswerMode::kNoAll;
+      case 4: return NUserAnswerMode::kAutoRenameAll;
+      default: return NUserAnswerMode::kQuit;
+    }
+  }
   if (outStream)
     *outStream << kFirstQuestionMessage;
   for (;;)
@@ -108,6 +124,15 @@ static bool GetPassword(CStdOutStream *outStream, UString &psw)
 
 HRESULT GetPassword_HRESULT(CStdOutStream *outStream, UString &psw)
 {
+  if (g_sz_get_password_callback)
+  {
+    const char *pwd = g_sz_get_password_callback(0);
+    if (!pwd)
+      return E_ABORT;
+    AString a(pwd);
+    psw = MultiByteToUnicodeString(a);
+    return S_OK;
+  }
   if (!GetPassword(outStream, psw))
     return E_INVALIDARG;
   if (g_StdIn.Error())

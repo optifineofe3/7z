@@ -1,0 +1,169 @@
+/* English Localization */
+
+/* Tabs */
+"tab_archives" = "Archives";
+"tab_tasks" = "Tasks";
+"tab_tools" = "Tools";
+"tab_settings" = "Settings";
+
+/* Main Screen */
+"app_title" = "7-Zip";
+"create_archive_btn" = "Create Archive";
+"open_archive_btn" = "Open Archive";
+"recent_archives" = "Recent Archives";
+"clear_recent" = "Clear Recent";
+"no_recent_archives" = "No recent archives";
+"quick_benchmark" = "Quick Benchmark";
+
+/* Add to Archive Dialog */
+"create_archive_title" = "Add to Archive";
+"btn_compress" = "Compress";
+"btn_cancel" = "Cancel";
+"section_general" = "General";
+"archive_name" = "Archive Name";
+"destination_folder" = "Destination Folder";
+"choose_folder" = "Choose...";
+"default_folder" = "App Sandbox (Documents)";
+"archive_format" = "Archive Format";
+"compression_level" = "Compression Level";
+"compression_method" = "Compression Method";
+
+/* Levels */
+"level_store" = "0 - Store";
+"level_fastest" = "1 - Fastest";
+"level_fast" = "3 - Fast";
+"level_normal" = "5 - Normal";
+"level_maximum" = "7 - Maximum";
+"level_ultra" = "9 - Ultra";
+
+/* Compression Settings */
+"section_compression" = "Compression Parameters";
+"dict_size" = "Dictionary Size";
+"word_size" = "Word Size";
+"solid_size" = "Solid Block Size";
+"threads_count" = "CPU Threads";
+"threads_default" = "Auto (%d threads)";
+"memory_budget_title" = "Memory Usage Estimate";
+"memory_comp_estimate" = "Compression: ~%@";
+"memory_decomp_estimate" = "Decompression: ~%@";
+"memory_warning" = "Warning: Exceeds safe Jetsam budget (%@ available). Process may be terminated by iOS.";
+"btn_auto_reduce" = "Auto-reduce Dictionary";
+
+/* Split Volumes */
+"section_volumes" = "Split to Volumes";
+"volume_size" = "Volume Size";
+"vol_none" = "Single Volume (No split)";
+"vol_custom" = "Custom Volume Size...";
+
+/* Update & Paths */
+"section_update_paths" = "Update & Path Modes";
+"update_mode" = "Update Mode";
+"path_mode" = "Path Mode";
+"update_add_replace" = "Add and replace files";
+"update_update_add" = "Update and add files";
+"update_freshen" = "Freshen existing files";
+"update_synchronize" = "Synchronize files";
+"path_relative" = "Relative paths";
+"path_full" = "Full paths";
+"path_absolute" = "Absolute paths";
+
+/* Options */
+"preserve_timestamps" = "Preserve file timestamps";
+"preserve_symlinks" = "Preserve symbolic links";
+"recursive" = "Recurse subdirectories";
+"exclude_mask" = "Exclude mask (-x)";
+"include_mask" = "Include mask";
+
+/* Encryption */
+"section_encryption" = "Encryption";
+"password" = "Password";
+"confirm_password" = "Confirm Password";
+"show_password" = "Show Password";
+"encrypt_headers" = "Encrypt file names (-mhe)";
+"encryption_method" = "Encryption Method";
+"passwords_mismatch" = "Passwords do not match";
+
+/* Advanced & Presets */
+"section_advanced" = "Advanced & Parameters";
+"custom_parameters" = "Parameters";
+"presets_title" = "Configuration Presets";
+"preset_fast" = "Fast";
+"preset_normal" = "Normal";
+"preset_maximum" = "Maximum";
+"preset_max_encrypted" = "Maximum + Encryption";
+"save_preset" = "Save as Custom Preset";
+"resulting_cli" = "Generated Command Line";
+
+/* Archive Browser */
+"items_count" = "%d items";
+"selected_count" = "%d selected";
+"search_placeholder" = "Search files...";
+"sort_name" = "Name";
+"sort_size" = "Size";
+"sort_date" = "Date";
+"sort_packed" = "Packed Size";
+"btn_extract" = "Extract";
+"btn_test" = "Test";
+"btn_info" = "Info";
+"btn_delete" = "Delete";
+"btn_share" = "Share";
+"archive_info" = "Archive Information";
+"test_archive" = "Test Archive";
+"delete_confirm" = "Delete selected items from archive?";
+"confirm_btn" = "Confirm";
+
+/* Extract Dialog */
+"extract_title" = "Extract Archive";
+"extract_to" = "Extract To";
+"extract_full_paths" = "Preserve full directory hierarchy";
+"overwrite_policy" = "Overwrite Policy";
+"overwrite_ask" = "Ask before overwrite";
+"overwrite_replace" = "Overwrite existing files";
+"overwrite_skip" = "Skip existing files";
+"overwrite_rename" = "Auto-rename extracted files";
+"enter_password_prompt" = "Archive is encrypted. Enter password:";
+
+/* Tasks */
+"tasks_title" = "Tasks Queue";
+"task_active" = "Active";
+"task_queued" = "Queued";
+"task_completed" = "Completed";
+"task_failed" = "Failed";
+"task_cancelled" = "Cancelled";
+"btn_cancel_task" = "Cancel";
+"btn_retry_task" = "Retry";
+"task_logs" = "Operation Log";
+"copy_log" = "Copy Log";
+"clear_tasks" = "Clear Finished Tasks";
+
+/* Tools */
+"tools_title" = "Tools";
+"benchmark_title" = "7-Zip Benchmark";
+"start_benchmark" = "Start Benchmark";
+"iterations" = "Number of passes: %d";
+"mips_rating" = "Rating: %d MIPS";
+"hash_calc_title" = "Checksum & Hashes";
+"select_file_hash" = "Select File...";
+"calculate_hash" = "Calculate Hash";
+
+/* Settings */
+"settings_title" = "Settings";
+"language" = "Language";
+"lang_auto" = "System Default";
+"lang_en" = "English";
+"lang_ru" = "Русский";
+"default_extract_folder" = "Default Destination Folder";
+"default_preset" = "Default Compression Preset";
+"default_mem_limit" = "Default Memory Budget";
+"auto_clean_temp" = "Auto-clean Temporary Files";
+"clear_cache_now" = "Clear Cache Now";
+"show_hidden_files" = "Show Hidden Files";
+"size_display_format" = "Size Display Format";
+"size_binary" = "Binary (1024 KiB, MiB)";
+"size_decimal" = "Decimal (1000 KB, MB)";
+"haptic_feedback" = "Haptic Feedback";
+"dev_mode" = "Developer Mode";
+"dev_mode_desc" = "Show generated CLI commands and verbose logs";
+"about_title" = "About 7-Zip iOS";
+"license_info" = "License";
+"source_code" = "Source Code";

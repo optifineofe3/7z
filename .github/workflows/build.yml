@@ -1,0 +1,108 @@
+name: Build & Release 7-Zip iOS
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & Verify 7-Zip iOS
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Homebrew dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/Homebrew
+            /usr/local/Homebrew
+          key: brew-${{ runner.os }}-${{ hashFiles('.github/workflows/build.yml') }}
+          restore-keys: |
+            brew-${{ runner.os }}-
+
+      - name: Install build tools
+        run: |
+          brew install xcodegen ldid cmake ninja
+
+      - name: Cache DerivedData
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData
+          key: deriveddata-${{ runner.os }}-${{ hashFiles('project.yml', 'App/**', 'Core/**') }}
+          restore-keys: |
+            deriveddata-${{ runner.os }}-
+
+      - name: Build & Run Core Smoke Test on macOS host
+        run: |
+          echo "=== 1. Building 7-Zip Core smoke test for host ==="
+          cmake -B build_host -S Core -DCMAKE_BUILD_TYPE=Release
+          cmake --build build_host -j$(sysctl -n hw.ncpu)
+          
+          echo "=== 2. Running 7-Zip smoke test roundtrip ==="
+          ./build_host/smoke_test
+
+      - name: Generate Xcode Project
+        run: |
+          xcodegen generate
+
+      - name: Build 7Zip for iOS arm64
+        run: |
+          xcodebuild build \
+            -project 7Zip.xcodeproj \
+            -scheme 7Zip \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            COMPILER_INDEX_STORE_ENABLE=NO
+
+      - name: Package .app into IPA
+        run: |
+          mkdir -p build_ipa/Payload
+          APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "7Zip.app" -type d | grep "Release-iphoneos" | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: 7Zip.app was not found in DerivedData"
+            exit 1
+          fi
+          echo "Found compiled app at: $APP_PATH"
+          cp -R "$APP_PATH" build_ipa/Payload/
+          
+          echo "=== Embedding entitlements with ldid ==="
+          if [ -f Resources/7Zip.entitlements ]; then
+            ldid -SResources/7Zip.entitlements "build_ipa/Payload/7Zip.app/7Zip" || true
+          fi
+          
+          cd build_ipa
+          zip -qry ../7Zip.ipa Payload
+          cd ..
+          ls -lh 7Zip.ipa
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: 7Zip-iOS-unsigned
+          path: 7Zip.ipa
+          if-no-files-found: error
+
+      - name: Release IPA on Tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: 7Zip.ipa
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
