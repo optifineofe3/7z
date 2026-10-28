@@ -340,7 +340,6 @@ int sz_run(int argc, const char* const* argv, const sz_callbacks* cb) {
     // Automatically inject -bsp1 so percent progress callback is invoked even in non-terminal mode
     if (!has_bsp) {
         owned_injected_args.push_back("-bsp1");
-        arg_copies.push_back(const_cast<char*>(owned_injected_args.back().c_str()));
     }
 
     // Automatically inject safe memory budget for compression to avoid Jetsam memory kills
@@ -348,7 +347,12 @@ int sz_run(int argc, const char* const* argv, const sz_callbacks* cb) {
         char mem_buf[64];
         sz_get_safe_memuse_switch(mem_buf, sizeof(mem_buf), 0.70);
         owned_injected_args.push_back(mem_buf);
-        arg_copies.push_back(const_cast<char*>(owned_injected_args.back().c_str()));
+    }
+
+    // Append injected arguments after all vector modifications are finished
+    // to prevent dangling pointers from std::vector reallocations
+    for (size_t i = 0; i < owned_injected_args.size(); ++i) {
+        arg_copies.push_back(const_cast<char*>(owned_injected_args[i].c_str()));
     }
 
     int res = SZ_OK;
