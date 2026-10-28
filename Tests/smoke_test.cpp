@@ -9,7 +9,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <string>
+#include <vector>
 #include "../Core/sz_wrapper.h"
+
+static std::vector<std::string> g_collected_logs;
 
 static void dummy_progress(const sz_progress_info* info, void* ud) {
     (void)ud;
@@ -21,6 +25,9 @@ static void dummy_progress(const sz_progress_info* info, void* ud) {
 static void dummy_log(const char* line, void* ud) {
     (void)ud;
     printf("[7-Zip Log] %s\n", line);
+    if (line) {
+        g_collected_logs.push_back(line);
+    }
 }
 
 static void dummy_error(const char* message, int is_warning, void* ud) {
@@ -29,6 +36,7 @@ static void dummy_error(const char* message, int is_warning, void* ud) {
 }
 
 static int run_cmd(int argc, const char* argv[]) {
+    g_collected_logs.clear();
     sz_callbacks cb;
     memset(&cb, 0, sizeof(cb));
     cb.on_progress = dummy_progress;
@@ -180,6 +188,41 @@ int main() {
             return 1;
         }
         printf("[OK] Test 4: Info command passed.\n");
+    }
+
+    // 5. Test Archive Listing and Callback Output Capture (l -slt)
+    {
+        printf("\n>>> Test 5: Archive listing & callback capture (7zz l -slt test.7z)\n");
+        const char* list_args[] = { "7zz", "l", "-slt", "test.7z", "-pTestSecretKey123", "-y" };
+        int code = run_cmd(6, list_args);
+        if (code != SZ_OK) {
+            fprintf(stderr, "Listing failed with code: %d\n", code);
+            return 1;
+        }
+
+        if (g_collected_logs.empty()) {
+            fprintf(stderr, "FATAL: No log lines captured during 7zz l -slt!\n");
+            return 1;
+        }
+
+        bool found_format = false;
+        bool found_sample1 = false;
+        bool found_sample2 = false;
+
+        for (size_t i = 0; i < g_collected_logs.size(); ++i) {
+            const std::string& l = g_collected_logs[i];
+            if (l.find("Type = 7z") != std::string::npos) found_format = true;
+            if (l.find("Path = sample1.txt") != std::string::npos) found_sample1 = true;
+            if (l.find("Path = sample2.txt") != std::string::npos) found_sample2 = true;
+        }
+
+        if (!found_format || !found_sample1 || !found_sample2) {
+            fprintf(stderr, "FATAL: Listing output missing expected items! (format: %d, sample1: %d, sample2: %d)\n",
+                    found_format, found_sample1, found_sample2);
+            return 1;
+        }
+        printf("[OK] Test 5: Archive listing & callback output capture verified (%zu lines captured).\n",
+               g_collected_logs.size());
     }
 
     // Restore working directory

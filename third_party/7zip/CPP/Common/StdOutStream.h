@@ -33,7 +33,8 @@ public:
 
   // ~CStdOutStream() { Close(); }
 
-  // void AttachStdStream(FILE *stream) { _stream  = stream; _streamIsOpen = false; }
+  void AttachStdStream(FILE *stream) { _stream = stream; }
+  FILE *GetStream() const { return _stream; }
   // bool IsDefined() const { return _stream  != NULL; }
 
   operator FILE *() { return _stream; }

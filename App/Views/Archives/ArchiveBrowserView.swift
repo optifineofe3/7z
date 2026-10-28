@@ -134,6 +134,17 @@ public struct ArchiveBrowserView: View {
                     .cornerRadius(8)
                 }
                 Spacer()
+            } else if filteredAndSortedItems.isEmpty {
+                Spacer()
+                VStack(spacing: 8) {
+                    Image(systemName: "folder")
+                        .font(.system(size: 40))
+                        .foregroundColor(AppTheme.textSecondary)
+                    Text("No items found")
+                        .font(.subheadline)
+                        .foregroundColor(AppTheme.textSecondary)
+                }
+                Spacer()
             } else {
                 List {
                     ForEach(filteredAndSortedItems) { item in
@@ -284,6 +295,15 @@ public struct ArchiveBrowserView: View {
                 try? FileManager.default.removeItem(at: url)
             }
         }
+        .alert("Password Required", isPresented: $promptPassword) {
+            SecureField("Enter archive password", text: $enteredPassword)
+            Button("OK") {
+                loadArchive()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This archive is protected with a password.")
+        }
         .onAppear {
             loadArchive()
         }
@@ -389,7 +409,12 @@ public struct ArchiveBrowserView: View {
                     self.archiveInfo = parsedInfo
                     AppSettings.shared.addRecentArchive(self.archiveURL)
                 case .failure(let err):
-                    self.errorMessage = err.localizedDescription
+                    let desc = err.localizedDescription
+                    if desc.localizedCaseInsensitiveContains("password") || desc.localizedCaseInsensitiveContains("wrong password") {
+                        self.promptPassword = true
+                    } else {
+                        self.errorMessage = desc
+                    }
                 }
             }
         }

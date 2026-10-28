@@ -113,16 +113,31 @@ static int custom_write(void* cookie, const char* buf, int size) {
 static FILE* create_callback_file(StreamBuffer* sb) {
     return funopen(sb, NULL, custom_write, NULL, NULL);
 }
+#elif defined(__linux__) && defined(__GLIBC__)
+static ssize_t cookie_write(void* cookie, const char* buf, size_t size) {
+    if (!cookie || size == 0) return 0;
+    StreamBuffer* sb = static_cast<StreamBuffer*>(cookie);
+    sb->append(buf, size);
+    return (ssize_t)size;
+}
+
+static FILE* create_callback_file(StreamBuffer* sb) {
+    cookie_io_functions_t funcs;
+    memset(&funcs, 0, sizeof(funcs));
+    funcs.write = cookie_write;
+    return fopencookie(sb, "w", funcs);
+}
 #else
 static FILE* create_callback_file(StreamBuffer* sb) {
     (void)sb;
-    return stdout;
+    return NULL;
 }
 #endif
 
 // State for active run
 static const sz_callbacks* g_active_cb = NULL;
 static pthread_mutex_t g_cb_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t g_exec_mutex = PTHREAD_MUTEX_INITIALIZER;
 static double g_start_time_sec = 0.0;
 
 static double get_current_time_sec() {
@@ -238,6 +253,8 @@ static void* async_worker_thread(void* arg) {
 } // namespace
 
 int sz_run(int argc, const char* const* argv, const sz_callbacks* cb) {
+    pthread_mutex_lock(&g_exec_mutex);
+
     // 1. Force UTF-8 environment
     setlocale(LC_ALL, "UTF-8");
 
@@ -255,17 +272,31 @@ int sz_run(int argc, const char* const* argv, const sz_callbacks* cb) {
     StreamBuffer out_buf(cb, false);
     StreamBuffer err_buf(cb, true);
 
-#if defined(__APPLE__)
+    FILE* orig_stdout = (FILE*)g_StdOut;
+    FILE* orig_stderr = (FILE*)g_StdErr;
+    int orig_stdout_cp = g_StdOut.CodePage;
+    int orig_stderr_cp = g_StdErr.CodePage;
+
+#if defined(__APPLE__) || (defined(__linux__) && defined(__GLIBC__))
     FILE* out_file = create_callback_file(&out_buf);
     FILE* err_file = create_callback_file(&err_buf);
-    CStdOutStream custom_stdout(out_file);
-    CStdOutStream custom_stderr(err_file);
-    g_StdStream = &custom_stdout;
-    g_ErrStream = &custom_stderr;
+    if (out_file) {
+        setvbuf(out_file, NULL, _IONBF, 0);
+        g_StdOut.AttachStdStream(out_file);
+    }
+    if (err_file) {
+        setvbuf(err_file, NULL, _IONBF, 0);
+        g_StdErr.AttachStdStream(err_file);
+    }
 #else
+    FILE* out_file = NULL;
+    FILE* err_file = NULL;
+#endif
+
+    g_StdOut.CodePage = CP_UTF8;
+    g_StdErr.CodePage = CP_UTF8;
     g_StdStream = &g_StdOut;
     g_ErrStream = &g_StdErr;
-#endif
 
     // Make local copy of argument pointers for Main2
     std::vector<char*> arg_copies;
@@ -351,13 +382,24 @@ int sz_run(int argc, const char* const* argv, const sz_callbacks* cb) {
     }
 
     // 5. Cleanup streams
+    g_StdOut.Flush();
+    g_StdErr.Flush();
+
+#if defined(__APPLE__) || (defined(__linux__) && defined(__GLIBC__))
+    if (out_file && out_file != stdout) {
+        fclose(out_file);
+    }
+    if (err_file && err_file != stderr) {
+        fclose(err_file);
+    }
+#endif
     out_buf.flush();
     err_buf.flush();
 
-#if defined(__APPLE__)
-    if (out_file) fclose(out_file);
-    if (err_file) fclose(err_file);
-#endif
+    g_StdOut.AttachStdStream(orig_stdout);
+    g_StdErr.AttachStdStream(orig_stderr);
+    g_StdOut.CodePage = orig_stdout_cp;
+    g_StdErr.CodePage = orig_stderr_cp;
     g_StdStream = NULL;
     g_ErrStream = NULL;
 
@@ -374,6 +416,7 @@ int sz_run(int argc, const char* const* argv, const sz_callbacks* cb) {
         cb->on_complete(res, cb->user_data);
     }
 
+    pthread_mutex_unlock(&g_exec_mutex);
     return res;
 }
 

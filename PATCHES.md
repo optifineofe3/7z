@@ -32,3 +32,8 @@ This document lists all minimal modifications made to the original 7-Zip codebas
 * **Purpose**: Prevent calls to `exit(1)` in multithreaded match finder lock checks.
 * **Changes**:
   * In the debug macro block `BUFFER_MUST_BE_LOCKED` / `BUFFER_MUST_BE_UNLOCKED`, replaced `exit(1)` with a safe no-op.
+
+### 6. `third_party/7zip/CPP/Common/StdOutStream.h`
+* **Purpose**: Allow redirecting global `g_StdOut` and `g_StdErr` streams to custom in-memory callback file streams.
+* **Changes**:
+  * Added public `void AttachStdStream(FILE *stream)` and `FILE *GetStream() const` to `CStdOutStream` so archive listing (`7zz l -slt`) and all other direct `g_StdOut` outputs can be captured by UI callbacks.

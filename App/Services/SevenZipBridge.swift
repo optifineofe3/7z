@@ -190,8 +190,17 @@ public final class SevenZipBridge {
                     return
                 }
 
-                let parsed = self.parseSltOutput(logLines)
-                completion(.success(parsed))
+                var (items, info) = self.parseSltOutput(logLines)
+                if info.physicalSize == 0 {
+                    if let attr = try? FileManager.default.attributesOfItem(atPath: receipt.url.path),
+                       let sz = attr[.size] as? UInt64 {
+                        info.physicalSize = sz
+                    } else if let attr = try? FileManager.default.attributesOfItem(atPath: archiveURL.path),
+                              let sz = attr[.size] as? UInt64 {
+                        info.physicalSize = sz
+                    }
+                }
+                completion(.success((items, info)))
             }
         )
     }
@@ -224,8 +233,10 @@ public final class SevenZipBridge {
                     if let blk = currentProperties["Blocks"], let b = Int(blk) {
                         info.blocksCount = b
                     }
-                    info.rawProperties = currentProperties
-                    isHeaderSection = false
+                    for (k, v) in currentProperties {
+                        info.rawProperties[k] = v
+                    }
+                    // Keep isHeaderSection = true until "----------" is hit
                 } else if let path = currentProperties["Path"], !path.isEmpty {
                     let isDir = (currentProperties["Folder"] == "+" || currentProperties["Attributes"]?.contains("D") == true)
                     let size = UInt64(currentProperties["Size"] ?? "0") ?? 0
@@ -237,15 +248,17 @@ public final class SevenZipBridge {
 
                     var modDate: Date? = nil
                     if let modStr = currentProperties["Modified"] {
+                        let cleanMod = modStr.count > 19 ? String(modStr.prefix(19)) : modStr
                         let df = DateFormatter()
                         df.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                        modDate = df.date(from: modStr)
+                        modDate = df.date(from: cleanMod)
                     }
 
-                    let filename = (path as NSString).lastPathComponent
+                    let normalizedPath = path.replacingOccurrences(of: "\\", with: "/")
+                    let filename = (normalizedPath as NSString).lastPathComponent
                     let item = ArchiveItem(
-                        name: filename.isEmpty ? path : filename,
-                        path: path,
+                        name: filename.isEmpty ? normalizedPath : filename,
+                        path: normalizedPath,
                         size: size,
                         packedSize: packed,
                         modifiedDate: modDate,
