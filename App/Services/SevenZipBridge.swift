@@ -113,12 +113,14 @@ public final class SevenZipBridge {
 
             // Convert arguments to C string array
             var cArgs: [UnsafePointer<CChar>?] = arguments.map { arg in
-                arg.withCString { strdup($0) }
+                arg.withCString { s in
+                    guard let p = strdup(s) else { return nil }
+                    return UnsafePointer(p)
+                }
             }
 
             let code = cArgs.withUnsafeBufferPointer { buf in
-                let basePtr = buf.baseAddress.map { UnsafeMutablePointer(mutating: $0) }
-                return sz_run(Int32(arguments.count), basePtr, &callbacks)
+                sz_run(Int32(arguments.count), buf.baseAddress, &callbacks)
             }
 
             // Free argument C strings
