@@ -205,12 +205,14 @@ public struct CreateArchiveView: View {
                                         .font(.caption2)
                                         .foregroundColor(AppTheme.warning)
                                 }
-                                Button(NSLocalizedString("btn_auto_reduce", comment: "")) {
+                                Button(action: {
                                     MemoryBudget.autoReduce(settings: &settings)
+                                }) {
+                                    Text(NSLocalizedString("btn_auto_reduce", comment: ""))
+                                        .font(.caption)
+                                        .bold()
+                                        .foregroundColor(AppTheme.accent)
                                 }
-                                .font(.caption)
-                                .bold()
-                                .foregroundColor(AppTheme.accent)
                                 .padding(.vertical, 4)
                             }
                             .padding(8)
@@ -367,7 +369,7 @@ public struct CreateArchiveView: View {
                 }
                 .listRowBackground(AppTheme.cardBackground)
             }
-            .scrollContentBackground(.hidden)
+            .hideScrollContentBackground()
             .appBackground()
             .navigationTitle(NSLocalizedString("create_archive_title", comment: ""))
             .navigationBarTitleDisplayMode(.inline)

@@ -92,7 +92,7 @@ public struct ExtractDialogView: View {
                 }
                 .listRowBackground(AppTheme.cardBackground)
             }
-            .scrollContentBackground(.hidden)
+            .hideScrollContentBackground()
             .appBackground()
             .navigationTitle(NSLocalizedString("extract_title", comment: ""))
             .navigationBarTitleDisplayMode(.inline)

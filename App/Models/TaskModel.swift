@@ -43,7 +43,7 @@ public enum TaskStatus: String, Codable {
     }
 }
 
-public struct OperationTask: Identifiable, ObservableObject {
+public class OperationTask: Identifiable, ObservableObject {
     public let id = UUID()
     public var type: TaskType
     public var title: String

@@ -99,7 +99,7 @@ public final class SevenZipBridge {
                 let exist = existPtr != nil ? String(cString: existPtr!) : ""
                 let newFile = newPtr != nil ? String(cString: newPtr!) : ""
                 let context = Unmanaged<ExecutionContext>.fromOpaque(userData).takeUnretainedValue()
-                let choice = context.confirmOverwrite?(exist, newFile) ?? SZ_OVERWRITE_YES_ALL
+                let choice = context.confirmOverwrite?(exist, newFile) ?? Int(SZ_OVERWRITE_YES_ALL)
                 return Int32(choice)
             }
 
@@ -176,7 +176,7 @@ public final class SevenZipBridge {
                 if !isWarn { errorLines.append(msg) }
             },
             getPassword: { _ in password },
-            confirmOverwrite: { _, _ in SZ_OVERWRITE_YES_ALL },
+            confirmOverwrite: { _, _ in Int(SZ_OVERWRITE_YES_ALL) },
             completion: { code in
                 if code != SZ_OK && code != SZ_WARNING {
                     let errDesc = self.errorMessage(for: code, isRussian: Locale.current.languageCode == "ru")

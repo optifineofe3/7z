@@ -114,7 +114,7 @@ public struct SettingsView: View {
                 }
                 .listRowBackground(AppTheme.cardBackground)
             }
-            .scrollContentBackground(.hidden)
+            .hideScrollContentBackground()
             .appBackground()
             .navigationTitle(NSLocalizedString("settings_title", comment: ""))
             .navigationBarTitleDisplayMode(.large)

@@ -198,7 +198,7 @@ public struct ArchiveBrowserView: View {
                     }
                 }
                 .listStyle(PlainListStyle())
-                .scrollContentBackground(.hidden)
+                .hideScrollContentBackground()
             }
 
             // Bottom Action Bar
