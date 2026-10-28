@@ -396,17 +396,24 @@ public struct ArchiveBrowserView: View {
     }
 
     private func testArchive() {
+        let receipt = BookmarkManager.shared.prepareReadableURL(for: archiveURL)
         let task = OperationTask(
             type: .test,
             title: "Test: \(archiveURL.lastPathComponent)",
-            commandLine: ["7zz", "t", archiveURL.path, "-y"]
+            commandLine: ["7zz", "t", receipt.url.path, "-y"]
         )
+        task.securityScopedURLs.append(archiveURL)
+        if receipt.url != archiveURL {
+            task.securityScopedURLs.append(receipt.url)
+        }
+        task.cleanupHandlers.append(receipt.cleanup)
         TaskManager.shared.enqueue(task: task)
     }
 
     private func previewFile(_ item: ArchiveItem) {
         guard !item.isDir else { return }
 
+        let receipt = BookmarkManager.shared.prepareReadableURL(for: archiveURL)
         let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try? FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
@@ -414,9 +421,10 @@ public struct ArchiveBrowserView: View {
 
         isExtractingPreview = true
         SevenZipBridge.shared.execute(
-            arguments: ["7zz", "e", archiveURL.path, item.path, "-o\(tempDir.path)", "-y"],
+            arguments: ["7zz", "e", receipt.url.path, item.path, "-o\(tempDir.path)", "-y"],
             completion: { code in
                 DispatchQueue.main.async {
+                    receipt.cleanup()
                     self.isExtractingPreview = false
                     if code == SZ_OK && FileManager.default.fileExists(atPath: targetFile.path) {
                         self.quickLookURL = targetFile

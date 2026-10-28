@@ -32,6 +32,15 @@ public final class TaskManager: ObservableObject {
     }
 
     public func cancelTask(_ task: OperationTask) {
+        for url in task.securityScopedURLs {
+            url.stopAccessingSecurityScopedResource()
+        }
+        for cleanup in task.cleanupHandlers {
+            cleanup()
+        }
+        task.securityScopedURLs.removeAll()
+        task.cleanupHandlers.removeAll()
+
         if currentActiveTask?.id == task.id {
             SevenZipBridge.shared.cancel()
             DispatchQueue.main.async {
@@ -76,6 +85,11 @@ public final class TaskManager: ObservableObject {
 
         backgroundTaskId = UIApplication.shared.beginBackgroundTask(withName: "7ZipTask-\(next.title)") {
             self.endBackgroundTask()
+        }
+
+        // Activate security-scoped resources for task duration
+        for url in next.securityScopedURLs {
+            _ = url.startAccessingSecurityScopedResource()
         }
 
         SevenZipBridge.shared.execute(
@@ -126,6 +140,17 @@ public final class TaskManager: ObservableObject {
                     }
 
                     self.currentActiveTask = nil
+
+                    // Release security-scoped resources & execute cleanup handlers
+                    for url in next.securityScopedURLs {
+                        url.stopAccessingSecurityScopedResource()
+                    }
+                    for cleanup in next.cleanupHandlers {
+                        cleanup()
+                    }
+                    next.securityScopedURLs.removeAll()
+                    next.cleanupHandlers.removeAll()
+
                     self.endBackgroundTask()
                     self.processNextTask()
                 }

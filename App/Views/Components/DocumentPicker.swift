@@ -9,7 +9,7 @@ import UniformTypeIdentifiers
 
 public struct DocumentPicker: UIViewControllerRepresentable {
     public enum Mode {
-        case openFile(types: [UTType], onPick: (URL) -> Void)
+        case openFile(types: [UTType], asCopy: Bool = true, onPick: (URL) -> Void)
         case openFolder(onPick: (URL) -> Void)
         case exportFile(url: URL, onComplete: () -> Void)
     }
@@ -23,8 +23,8 @@ public struct DocumentPicker: UIViewControllerRepresentable {
     public func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
         let picker: UIDocumentPickerViewController
         switch mode {
-        case .openFile(let types, _):
-            picker = UIDocumentPickerViewController(forOpeningContentTypes: types, asCopy: false)
+        case .openFile(let types, let asCopy, _):
+            picker = UIDocumentPickerViewController(forOpeningContentTypes: types, asCopy: asCopy)
         case .openFolder(_):
             picker = UIDocumentPickerViewController(forOpeningContentTypes: [.folder], asCopy: false)
         case .exportFile(let url, _):
@@ -47,7 +47,7 @@ public struct DocumentPicker: UIViewControllerRepresentable {
         public func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
             guard let url = urls.first else { return }
             switch parent.mode {
-            case .openFile(_, let onPick):
+            case .openFile(_, _, let onPick):
                 onPick(url)
             case .openFolder(let onPick):
                 onPick(url)

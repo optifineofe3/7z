@@ -133,11 +133,13 @@ public struct HashCalculatorView: View {
 
     private func calculateHashes() {
         guard let url = selectedFileURL else { return }
+        let receipt = BookmarkManager.shared.prepareReadableURL(for: url)
+
         isCalculating = true
         hashes.removeAll()
 
         // 7zz h -scrc* supports CRC32, CRC64, SHA1, SHA256, etc.
-        let args = ["7zz", "h", "-scrcCRC32", "-scrcCRC64", "-scrcSHA1", "-scrcSHA256", url.path]
+        let args = ["7zz", "h", "-scrcCRC32", "-scrcCRC64", "-scrcSHA1", "-scrcSHA256", receipt.url.path]
 
         var lines: [String] = []
         SevenZipBridge.shared.execute(
@@ -147,6 +149,7 @@ public struct HashCalculatorView: View {
             },
             completion: { code in
                 DispatchQueue.main.async {
+                    receipt.cleanup()
                     self.isCalculating = false
                     self.parseHashOutput(lines)
                     AppTheme.triggerHaptic(type: code == SZ_OK ? .success : .error)

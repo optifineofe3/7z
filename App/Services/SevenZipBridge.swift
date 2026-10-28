@@ -160,11 +160,13 @@ public final class SevenZipBridge {
         password: String? = nil,
         completion: @escaping (Result<([ArchiveItem], ArchiveInfo), Error>) -> Void
     ) {
+        let receipt = BookmarkManager.shared.prepareReadableURL(for: archiveURL)
+
         var args = ["7zz", "l", "-slt", "-y"]
         if let pwd = password, !pwd.isEmpty {
             args.append("-p\(pwd)")
         }
-        args.append(archiveURL.path)
+        args.append(receipt.url.path)
 
         var logLines: [String] = []
         var errorLines: [String] = []
@@ -180,6 +182,7 @@ public final class SevenZipBridge {
             getPassword: { _ in password },
             confirmOverwrite: { _, _ in Int(SZ_OVERWRITE_YES_ALL) },
             completion: { code in
+                receipt.cleanup()
                 if code != SZ_OK && code != SZ_WARNING {
                     let errDesc = self.errorMessage(for: code, isRussian: Locale.current.languageCode == "ru")
                     let detailed = errorLines.isEmpty ? errDesc : errorLines.joined(separator: "\n")

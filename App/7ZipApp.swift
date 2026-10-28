@@ -28,9 +28,10 @@ struct SevenZipApp: App {
                 .preferredColorScheme(.dark)
                 .onOpenURL { incomingURL in
                     // Handle "Open in..." from Files, Safari, Telegram, Mail, etc.
-                    BookmarkManager.shared.saveBookmark(for: incomingURL, key: "opened_external_url")
-                    AppSettings.shared.addRecentArchive(incomingURL)
-                    openedArchiveURL = incomingURL
+                    let receipt = BookmarkManager.shared.prepareReadableURL(for: incomingURL)
+                    BookmarkManager.shared.saveBookmark(for: receipt.url, key: "opened_external_url")
+                    AppSettings.shared.addRecentArchive(receipt.url)
+                    openedArchiveURL = receipt.url
                 }
                 .sheet(item: $openedArchiveURL) { url in
                     NavigationView {

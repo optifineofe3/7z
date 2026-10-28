@@ -126,11 +126,13 @@ public struct ExtractDialogView: View {
     }
 
     private func startExtraction() {
+        let receipt = BookmarkManager.shared.prepareReadableURL(for: archiveURL)
+
         // Create destination directory if not exists
         try? FileManager.default.createDirectory(at: destinationURL, withIntermediateDirectories: true)
 
         let cmd = preserveFullPaths ? "x" : "e"
-        var args = ["7zz", cmd, archiveURL.path, "-o\(destinationURL.path)"]
+        var args = ["7zz", cmd, receipt.url.path, "-o\(destinationURL.path)"]
 
         // Overwrite switch
         switch overwritePolicy {
@@ -156,6 +158,12 @@ public struct ExtractDialogView: View {
 
         let taskTitle = "Extract: \(archiveURL.lastPathComponent)"
         let task = OperationTask(type: .extract, title: taskTitle, commandLine: args)
+        task.securityScopedURLs.append(archiveURL)
+        task.securityScopedURLs.append(destinationURL)
+        if receipt.url != archiveURL {
+            task.securityScopedURLs.append(receipt.url)
+        }
+        task.cleanupHandlers.append(receipt.cleanup)
         TaskManager.shared.enqueue(task: task)
 
         onStarted?()

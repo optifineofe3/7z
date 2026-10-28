@@ -149,9 +149,10 @@ public struct ArchivesHomeView: View {
             .navigationTitle("7-Zip")
             .navigationBarTitleDisplayMode(.large)
             .sheet(isPresented: $showFilePicker) {
-                DocumentPicker(mode: .openFile(types: [.archive, .data]) { pickedURL in
-                    BookmarkManager.shared.saveBookmark(for: pickedURL, key: "last_picked_archive")
-                    selectedArchiveURL = pickedURL
+                DocumentPicker(mode: .openFile(types: [.archive, .data], asCopy: true) { pickedURL in
+                    let receipt = BookmarkManager.shared.prepareReadableURL(for: pickedURL)
+                    BookmarkManager.shared.saveBookmark(for: receipt.url, key: "last_picked_archive")
+                    selectedArchiveURL = receipt.url
                     navigateToBrowser = true
                 })
             }

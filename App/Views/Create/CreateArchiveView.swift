@@ -429,6 +429,8 @@ public struct CreateArchiveView: View {
 
         let taskTitle = "Compress: \(archiveName)\(settings.format.defaultExtension)"
         let task = OperationTask(type: .compress, title: taskTitle, commandLine: args)
+        task.securityScopedURLs.append(destinationFolderURL)
+        task.securityScopedURLs.append(contentsOf: inputURLs)
         TaskManager.shared.enqueue(task: task)
 
         dismiss()

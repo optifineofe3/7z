@@ -60,6 +60,8 @@ public class OperationTask: Identifiable, ObservableObject {
 
     public var startedAt: Date = Date()
     public var finishedAt: Date? = nil
+    public var securityScopedURLs: [URL] = []
+    public var cleanupHandlers: [() -> Void] = []
 
     public init(type: TaskType, title: String, commandLine: [String]) {
         self.type = type
