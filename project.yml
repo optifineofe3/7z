@@ -368,3 +368,5 @@ targets:
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGNING_REQUIRED: NO
         CODE_SIGN_IDENTITY: ""
+        OTHER_LDFLAGS: $(inherited) -all_load
+        DEAD_CODE_STRIPPING: NO
