@@ -35,6 +35,15 @@ jobs:
         run: |
           brew install xcodegen ldid cmake ninja
 
+      - name: Select Xcode Version
+        run: |
+          LATEST_XCODE=$(find /Applications -maxdepth 1 -name "Xcode_16*.app" | sort -V | tail -n 1)
+          if [ -n "$LATEST_XCODE" ]; then
+            echo "Selecting $LATEST_XCODE"
+            sudo xcode-select -s "$LATEST_XCODE"
+          fi
+          xcodebuild -version
+
       - name: Cache DerivedData
         uses: actions/cache@v4
         with:
@@ -55,6 +64,8 @@ jobs:
       - name: Generate Xcode Project
         run: |
           xcodegen generate
+          # Ensure project format compatibility across Xcode versions
+          sed -i '' 's/objectVersion = 77;/objectVersion = 56;/g' 7Zip.xcodeproj/project.pbxproj || true
 
       - name: Build 7Zip for iOS arm64
         run: |
@@ -63,6 +74,7 @@ jobs:
             -scheme 7Zip \
             -configuration Release \
             -destination "generic/platform=iOS" \
+            -derivedDataPath build_xcode \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
@@ -71,9 +83,12 @@ jobs:
       - name: Package .app into IPA
         run: |
           mkdir -p build_ipa/Payload
-          APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "7Zip.app" -type d | grep "Release-iphoneos" | head -n 1)
-          if [ -z "$APP_PATH" ]; then
-            echo "Error: 7Zip.app was not found in DerivedData"
+          APP_PATH="build_xcode/Build/Products/Release-iphoneos/7Zip.app"
+          if [ ! -d "$APP_PATH" ]; then
+            APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "7Zip.app" -type d | grep "Release-iphoneos" | head -n 1)
+          fi
+          if [ -z "$APP_PATH" ] || [ ! -d "$APP_PATH" ]; then
+            echo "Error: 7Zip.app was not found"
             exit 1
           fi
           echo "Found compiled app at: $APP_PATH"

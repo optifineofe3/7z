@@ -1,6 +1,7 @@
 name: 7Zip
 options:
   bundleIdPrefix: com.sevenzip
+  xcodeVersion: "15.4"
   deploymentTarget:
     iOS: "15.0"
 settings:
