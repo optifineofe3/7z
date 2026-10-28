@@ -16,13 +16,6 @@ public struct SettingsView: View {
             Form {
                 // General Settings
                 Section(header: Text("General").foregroundColor(AppTheme.textSecondary)) {
-                    Picker(NSLocalizedString("language", comment: ""), selection: $settings.language) {
-                        Text(NSLocalizedString("lang_auto", comment: "")).tag("auto")
-                        Text(NSLocalizedString("lang_en", comment: "")).tag("en")
-                        Text(NSLocalizedString("lang_ru", comment: "")).tag("ru")
-                    }
-                    .foregroundColor(AppTheme.textPrimary)
-
                     Picker(NSLocalizedString("overwrite_policy", comment: ""), selection: $settings.defaultOverwritePolicy) {
                         Text(NSLocalizedString("overwrite_ask", comment: "")).tag(0)
                         Text(NSLocalizedString("overwrite_replace", comment: "")).tag(1)

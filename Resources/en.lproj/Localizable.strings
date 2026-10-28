@@ -148,10 +148,6 @@
 
 /* Settings */
 "settings_title" = "Settings";
-"language" = "Language";
-"lang_auto" = "System Default";
-"lang_en" = "English";
-"lang_ru" = "Русский";
 "default_extract_folder" = "Default Destination Folder";
 "default_preset" = "Default Compression Preset";
 "default_mem_limit" = "Default Memory Budget";

@@ -93,6 +93,7 @@ void CPercentPrinter::Print()
   if (g_sz_progress_callback)
   {
     g_sz_progress_callback(Completed, Total, Files, FileName.Ptr());
+    return; // Forward to UI callback and prevent printing percent characters into on_log
   }
 
   if (DisablePrint)

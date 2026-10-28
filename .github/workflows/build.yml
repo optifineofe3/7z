@@ -96,7 +96,7 @@ jobs:
           
           echo "=== Embedding entitlements with ldid ==="
           if [ -f Resources/7Zip.entitlements ]; then
-            ldid -SResources/7Zip.entitlements "build_ipa/Payload/7Zip.app/7Zip" || true
+            ldid -SResources/7Zip.entitlements "build_ipa/Payload/7Zip.app/7Zip"
           fi
           
           cd build_ipa

@@ -245,6 +245,11 @@ public struct CompressionSettings: Codable, Equatable {
         // Memory limit switch
         if memoryLimitMB > 0 {
             args.append("-mmemuse=\(memoryLimitMB)m")
+        } else {
+            let safeSwitch = SevenZipBridge.shared.safeMemoryLimitSwitch()
+            if !safeSwitch.isEmpty {
+                args.append(safeSwitch)
+            }
         }
 
         // Split to volumes
@@ -277,11 +282,10 @@ public struct CompressionSettings: Codable, Equatable {
             }
         }
 
-        // Custom parameters
+        // Custom parameters with proper quote/space tokenization
         if !customParameters.isEmpty {
-            for param in customParameters.split(separator: " ") {
-                args.append(String(param))
-            }
+            let parsedCustom = Self.parseCommandLineArguments(customParameters)
+            args.append(contentsOf: parsedCustom)
         }
 
         // Always assume Yes to prompts from CLI since UI handles confirmations
@@ -338,5 +342,38 @@ public struct CompressionSettings: Codable, Equatable {
         s.wordSize = 128
         s.encryptFileNames = true
         return s
+    }
+
+    /// Safely tokenize custom command-line arguments respecting quotes and escapes
+    public static func parseCommandLineArguments(_ text: String) -> [String] {
+        var args: [String] = []
+        var current = ""
+        var inSingleQuote = false
+        var inDoubleQuote = false
+        var escape = false
+
+        for char in text {
+            if escape {
+                current.append(char)
+                escape = false
+            } else if char == "\\" {
+                escape = true
+            } else if char == "\"" && !inSingleQuote {
+                inDoubleQuote.toggle()
+            } else if char == "'" && !inDoubleQuote {
+                inSingleQuote.toggle()
+            } else if char.isWhitespace && !inSingleQuote && !inDoubleQuote {
+                if !current.isEmpty {
+                    args.append(current)
+                    current.removeAll()
+                }
+            } else {
+                current.append(char)
+            }
+        }
+        if !current.isEmpty {
+            args.append(current)
+        }
+        return args
     }
 }

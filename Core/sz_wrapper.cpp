@@ -138,6 +138,7 @@ static FILE* create_callback_file(StreamBuffer* sb) {
 static const sz_callbacks* g_active_cb = NULL;
 static pthread_mutex_t g_cb_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_exec_mutex = PTHREAD_MUTEX_INITIALIZER;
+static volatile int g_cancel_requested = 0;
 static double g_start_time_sec = 0.0;
 
 static double get_current_time_sec() {
@@ -252,14 +253,29 @@ static void* async_worker_thread(void* arg) {
 
 } // namespace
 
+void sz_init_locale(void) {
+    if (!setlocale(LC_ALL, "en_US.UTF-8")) {
+        if (!setlocale(LC_ALL, "C.UTF-8")) {
+            setlocale(LC_ALL, "");
+        }
+    }
+}
+
 int sz_run(int argc, const char* const* argv, const sz_callbacks* cb) {
     pthread_mutex_lock(&g_exec_mutex);
 
-    // 1. Force UTF-8 environment
-    setlocale(LC_ALL, "UTF-8");
-
-    // 2. Setup callbacks
+    // 1. Setup callbacks & verify pre-run cancellation
     pthread_mutex_lock(&g_cb_mutex);
+    if (g_cancel_requested) {
+        g_cancel_requested = 0;
+        NConsoleClose::g_BreakCounter = 1;
+        pthread_mutex_unlock(&g_cb_mutex);
+        pthread_mutex_unlock(&g_exec_mutex);
+        if (cb && cb->on_complete) {
+            cb->on_complete(SZ_USER_STOPPED, cb->user_data);
+        }
+        return SZ_USER_STOPPED;
+    }
     g_active_cb = cb;
     g_start_time_sec = get_current_time_sec();
     NConsoleClose::g_BreakCounter = 0;
@@ -268,7 +284,7 @@ int sz_run(int argc, const char* const* argv, const sz_callbacks* cb) {
     g_sz_confirm_overwrite_callback = overwrite_bridge;
     pthread_mutex_unlock(&g_cb_mutex);
 
-    // 3. Setup output stream redirection
+    // 2. Setup output stream redirection
     StreamBuffer out_buf(cb, false);
     StreamBuffer err_buf(cb, true);
 
@@ -299,17 +315,47 @@ int sz_run(int argc, const char* const* argv, const sz_callbacks* cb) {
     g_ErrStream = &g_StdErr;
 
     // Make local copy of argument pointers for Main2
+    std::vector<std::string> owned_injected_args;
     std::vector<char*> arg_copies;
-    arg_copies.reserve((size_t)argc);
+    arg_copies.reserve((size_t)argc + 4);
+
+    bool has_bsp = false;
+    bool has_memuse = false;
+    bool is_compress = false;
+
     for (int i = 0; i < argc; ++i) {
-        arg_copies.push_back(const_cast<char*>(argv[i]));
+        const char* a = argv[i];
+        if (i == 1 && strcmp(a, "a") == 0) {
+            is_compress = true;
+        }
+        if (strncmp(a, "-bsp", 4) == 0) {
+            has_bsp = true;
+        }
+        if (strncmp(a, "-mmemuse", 8) == 0) {
+            has_memuse = true;
+        }
+        arg_copies.push_back(const_cast<char*>(a));
+    }
+
+    // Automatically inject -bsp1 so percent progress callback is invoked even in non-terminal mode
+    if (!has_bsp) {
+        owned_injected_args.push_back("-bsp1");
+        arg_copies.push_back(const_cast<char*>(owned_injected_args.back().c_str()));
+    }
+
+    // Automatically inject safe memory budget for compression to avoid Jetsam memory kills
+    if (is_compress && !has_memuse) {
+        char mem_buf[64];
+        sz_get_safe_memuse_switch(mem_buf, sizeof(mem_buf), 0.70);
+        owned_injected_args.push_back(mem_buf);
+        arg_copies.push_back(const_cast<char*>(owned_injected_args.back().c_str()));
     }
 
     int res = SZ_OK;
 
-    // 4. In-process invocation with exception harness
+    // 3. In-process invocation with exception harness
     try {
-        res = Main2(argc, arg_copies.data());
+        res = Main2((int)arg_copies.size(), arg_copies.data());
     }
     catch (const CNewException &) {
         if (cb && cb->on_error) {
@@ -409,6 +455,8 @@ int sz_run(int argc, const char* const* argv, const sz_callbacks* cb) {
     g_sz_get_password_callback = NULL;
     g_sz_confirm_overwrite_callback = NULL;
     g_active_cb = NULL;
+    g_cancel_requested = 0;
+    NConsoleClose::g_BreakCounter = 0;
     pthread_mutex_unlock(&g_cb_mutex);
 
     // 7. Completion callback
@@ -451,11 +499,17 @@ int sz_run_async(int argc, const char* const* argv, const sz_callbacks* cb) {
 }
 
 void sz_cancel(void) {
+    pthread_mutex_lock(&g_cb_mutex);
+    g_cancel_requested = 1;
     NConsoleClose::g_BreakCounter = 1;
+    pthread_mutex_unlock(&g_cb_mutex);
 }
 
 int sz_is_cancelled(void) {
-    return NConsoleClose::TestBreakSignal() ? 1 : 0;
+    pthread_mutex_lock(&g_cb_mutex);
+    int c = (g_cancel_requested || NConsoleClose::TestBreakSignal()) ? 1 : 0;
+    pthread_mutex_unlock(&g_cb_mutex);
+    return c;
 }
 
 uint64_t sz_get_available_memory(void) {
@@ -491,39 +545,21 @@ void sz_get_safe_memuse_switch(char* buf, size_t buf_len, double margin_fraction
 }
 
 const char* sz_get_error_message(int exit_code, int is_russian) {
-    if (is_russian) {
-        switch (exit_code) {
-            case SZ_OK:
-                return "Операция успешно завершена (Ошибок нет)";
-            case SZ_WARNING:
-                return "Предупреждение: некоторые файлы заблокированы, пропущены или изменены во время архивации";
-            case SZ_FATAL_ERROR:
-                return "Критическая ошибка: повреждённый архив, неверный пароль или сбой диска/памяти";
-            case SZ_CMDLINE_ERROR:
-                return "Ошибка параметров командной строки: некорректный ключ или неподдерживаемый формат";
-            case SZ_NOT_ENOUGH_MEM:
-                return "Недостаточно памяти для операции (превышен лимит Jetsam)";
-            case SZ_USER_STOPPED:
-                return "Операция отменена пользователем";
-            default:
-                return "Неизвестная ошибка";
-        }
-    } else {
-        switch (exit_code) {
-            case SZ_OK:
-                return "Operation completed successfully (No errors)";
-            case SZ_WARNING:
-                return "Warning: non-fatal error(s) occurred (files locked or missing)";
-            case SZ_FATAL_ERROR:
-                return "Fatal error: corrupted archive, wrong password, or disk/memory fault";
-            case SZ_CMDLINE_ERROR:
-                return "Command line error: invalid switch syntax or unsupported format";
-            case SZ_NOT_ENOUGH_MEM:
-                return "Not enough memory for operation (Jetsam budget exceeded)";
-            case SZ_USER_STOPPED:
-                return "Operation cancelled by user";
-            default:
-                return "Unknown error";
-        }
+    (void)is_russian; // English only across the app
+    switch (exit_code) {
+        case SZ_OK:
+            return "Operation completed successfully (No errors)";
+        case SZ_WARNING:
+            return "Warning: non-fatal error(s) occurred (files locked or missing)";
+        case SZ_FATAL_ERROR:
+            return "Fatal error: corrupted archive, wrong password, or disk/memory fault";
+        case SZ_CMDLINE_ERROR:
+            return "Command line error: invalid switch syntax or unsupported format";
+        case SZ_NOT_ENOUGH_MEM:
+            return "Not enough memory for operation (Jetsam budget exceeded)";
+        case SZ_USER_STOPPED:
+            return "Operation cancelled by user";
+        default:
+            return "Unknown error";
     }
 }

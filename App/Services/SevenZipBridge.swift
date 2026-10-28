@@ -8,7 +8,9 @@ import Foundation
 public final class SevenZipBridge {
     public static let shared = SevenZipBridge()
 
-    private init() {}
+    private init() {
+        sz_init_locale()
+    }
 
     public typealias ProgressHandler = (sz_progress_info) -> Void
     public typealias LogHandler = (String) -> Void
@@ -29,6 +31,8 @@ public final class SevenZipBridge {
 
         deinit {
             if let p = cachedPasswordCString {
+                let len = strlen(p)
+                memset(p, 0, len)
                 free(p)
             }
         }
@@ -85,6 +89,8 @@ public final class SevenZipBridge {
                 let context = Unmanaged<ExecutionContext>.fromOpaque(userData).takeUnretainedValue()
                 if let pwd = context.getPassword?(Int(verify)) {
                     if let old = context.cachedPasswordCString {
+                        let len = strlen(old)
+                        memset(old, 0, len)
                         free(old)
                     }
                     let allocated = strdup(pwd)
@@ -123,10 +129,15 @@ public final class SevenZipBridge {
                 sz_run(Int32(arguments.count), buf.baseAddress, &callbacks)
             }
 
-            // Free argument C strings
+            // Free argument C strings securely
             for ptr in cArgs {
                 if let p = ptr {
-                    free(UnsafeMutableRawPointer(mutating: p))
+                    let mut = UnsafeMutablePointer(mutating: p)
+                    if strncmp(p, "-p", 2) == 0 {
+                        let len = strlen(p)
+                        memset(mut, 0, len)
+                    }
+                    free(mut)
                 }
             }
 
@@ -146,13 +157,28 @@ public final class SevenZipBridge {
         sz_cancel()
     }
 
-    /// Get localized error text
-    public func errorMessage(for exitCode: Int, isRussian: Bool) -> String {
-        guard let cStr = sz_get_error_message(Int32(exitCode), isRussian ? 1 : 0) else {
-            return isRussian ? "Неизвестная ошибка" : "Unknown error"
+    /// Safe available memory budget switch (e.g. "-mmemuse=600m")
+    public func safeMemoryLimitSwitch(margin: Double = 0.70) -> String {
+        var buf = [CChar](repeating: 0, count: 64)
+        sz_get_safe_memuse_switch(&buf, buf.count, margin)
+        return String(cString: buf)
+    }
+
+    /// Get English error description for exit code
+    public func errorMessage(for exitCode: Int) -> String {
+        guard let cStr = sz_get_error_message(Int32(exitCode), 0) else {
+            return "Unknown error"
         }
         return String(cString: cStr)
     }
+
+    private static let sltDateFormatter: DateFormatter = {
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "en_US_POSIX")
+        df.timeZone = TimeZone(secondsFromGMT: 0)
+        df.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return df
+    }()
 
     /// Parse archive contents using "l -slt"
     public func listArchive(
@@ -184,7 +210,7 @@ public final class SevenZipBridge {
             completion: { code in
                 receipt.cleanup()
                 if code != SZ_OK && code != SZ_WARNING {
-                    let errDesc = self.errorMessage(for: code, isRussian: Locale.current.languageCode == "ru")
+                    let errDesc = self.errorMessage(for: code)
                     let detailed = errorLines.isEmpty ? errDesc : errorLines.joined(separator: "\n")
                     completion(.failure(NSError(domain: "7Zip", code: code, userInfo: [NSLocalizedDescriptionKey: detailed])))
                     return
@@ -238,7 +264,8 @@ public final class SevenZipBridge {
                     }
                     // Keep isHeaderSection = true until "----------" is hit
                 } else if let path = currentProperties["Path"], !path.isEmpty {
-                    let isDir = (currentProperties["Folder"] == "+" || currentProperties["Attributes"]?.contains("D") == true)
+                    // Strict directory determination by Folder property from 7-Zip -slt
+                    let isDir = (currentProperties["Folder"] == "+")
                     let size = UInt64(currentProperties["Size"] ?? "0") ?? 0
                     let packed = UInt64(currentProperties["Packed Size"] ?? "0") ?? 0
                     let crc = currentProperties["CRC"] ?? ""
@@ -249,9 +276,7 @@ public final class SevenZipBridge {
                     var modDate: Date? = nil
                     if let modStr = currentProperties["Modified"] {
                         let cleanMod = modStr.count > 19 ? String(modStr.prefix(19)) : modStr
-                        let df = DateFormatter()
-                        df.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                        modDate = df.date(from: cleanMod)
+                        modDate = Self.sltDateFormatter.date(from: cleanMod)
                     }
 
                     let normalizedPath = path.replacingOccurrences(of: "\\", with: "/")

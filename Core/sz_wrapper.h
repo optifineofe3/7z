@@ -63,6 +63,9 @@ typedef struct sz_callbacks {
     void (*on_complete)(int exit_code, void* user_data);
 } sz_callbacks;
 
+// Initialize UTF-8 locale once at process launch
+void sz_init_locale(void);
+
 // Run 7-Zip command synchronously on the caller's thread
 int sz_run(int argc, const char* const* argv, const sz_callbacks* cb);
 
@@ -81,7 +84,7 @@ uint64_t sz_get_available_memory(void);
 // Formats recommended memory usage switch into buf (e.g. "-mmemuse=600m")
 void sz_get_safe_memuse_switch(char* buf, size_t buf_len, double margin_fraction);
 
-// Get localized error description (is_russian != 0 for RU, 0 for EN)
+// Get English error description for exit code
 const char* sz_get_error_message(int exit_code, int is_russian);
 
 #ifdef __cplusplus

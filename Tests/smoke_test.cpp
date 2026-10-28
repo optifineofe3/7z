@@ -14,11 +14,14 @@
 #include "../Core/sz_wrapper.h"
 
 static std::vector<std::string> g_collected_logs;
+static int g_progress_call_count = 0;
+static uint64_t g_last_completed_bytes = 0;
 
 static void dummy_progress(const sz_progress_info* info, void* ud) {
     (void)ud;
-    if (info && info->percent > 0.0) {
-        // printf("[Progress] %.1f%% - %s\n", info->percent, info->current_file ? info->current_file : "");
+    if (info) {
+        g_progress_call_count++;
+        g_last_completed_bytes = info->completed_bytes;
     }
 }
 
@@ -223,6 +226,44 @@ int main() {
         }
         printf("[OK] Test 5: Archive listing & callback output capture verified (%zu lines captured).\n",
                g_collected_logs.size());
+    }
+
+    // 6. Test Progress Callback Verification
+    {
+        printf("\n>>> Test 6: Progress callback verification\n");
+        g_progress_call_count = 0;
+        g_last_completed_bytes = 0;
+
+        const char* compress_args[] = {
+            "7zz", "a", "test_progress.7z", "sample1.txt", "sample2.txt", "-y"
+        };
+        int code = run_cmd(6, compress_args);
+        if (code != SZ_OK) {
+            fprintf(stderr, "Progress test compression failed with code: %d\n", code);
+            return 1;
+        }
+
+        if (g_progress_call_count == 0) {
+            fprintf(stderr, "FATAL: Progress callback was never invoked!\n");
+            return 1;
+        }
+        printf("[OK] Test 6: Progress callback verified (%d invocations, %llu completed bytes).\n",
+               g_progress_call_count, (unsigned long long)g_last_completed_bytes);
+    }
+
+    // 7. Test Cancellation Verification (pre-run cancellation)
+    {
+        printf("\n>>> Test 7: Pre-run cancellation verification\n");
+        sz_cancel(); // Request cancellation before run
+        const char* cancel_args[] = {
+            "7zz", "a", "test_cancelled.7z", "sample1.txt", "sample2.txt", "-y"
+        };
+        int code = run_cmd(6, cancel_args);
+        if (code != SZ_USER_STOPPED) {
+            fprintf(stderr, "FATAL: Expected SZ_USER_STOPPED (%d) but got %d\n", SZ_USER_STOPPED, code);
+            return 1;
+        }
+        printf("[OK] Test 7: Pre-run cancellation handled correctly (returned SZ_USER_STOPPED).\n");
     }
 
     // Restore working directory

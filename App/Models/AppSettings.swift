@@ -9,7 +9,6 @@ import SwiftUI
 public class AppSettings: ObservableObject {
     public static let shared = AppSettings()
 
-    @AppStorage("app_language") public var language: String = "auto"
     @AppStorage("default_overwrite_policy") public var defaultOverwritePolicy: Int = 0 // 0 = Ask, 1 = Overwrite, 2 = Skip, 3 = Auto-rename
     @AppStorage("default_preset_name") public var defaultPresetName: String = "Normal"
     @AppStorage("auto_clean_temp") public var autoCleanTemp: Bool = true

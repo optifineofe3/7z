@@ -75,7 +75,7 @@ public struct TaskDetailView: View {
                     Text("Command Line")
                         .font(.caption)
                         .foregroundColor(AppTheme.textSecondary)
-                    Text(task.commandLine.joined(separator: " "))
+                    Text(task.sanitizedCommandLine)
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundColor(AppTheme.textPrimary)
                 }

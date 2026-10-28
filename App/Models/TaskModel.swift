@@ -69,6 +69,17 @@ public class OperationTask: Identifiable, ObservableObject {
         self.commandLine = commandLine
     }
 
+    /// Command line arguments with sensitive flags (such as passwords) masked out
+    public var sanitizedCommandLine: String {
+        let masked = commandLine.map { arg -> String in
+            if arg.starts(with: "-p") && arg.count > 2 {
+                return "-p******"
+            }
+            return arg
+        }
+        return masked.joined(separator: " ")
+    }
+
     public var formattedSpeed: String {
         guard speedBytesPerSec > 0 else { return "--" }
         return ByteCountFormatter.string(fromByteCount: Int64(speedBytesPerSec), countStyle: .binary) + "/s"

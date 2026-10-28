@@ -14,7 +14,7 @@ This document lists all minimal modifications made to the original 7-Zip codebas
 * **Purpose**: Bridge 7-Zip progress reporting to SwiftUI / Objective-C / C callbacks.
 * **Changes**:
   * Added global callback hook `g_sz_progress_callback(UInt64 completed, UInt64 total, UInt64 files, const wchar_t* fileName)`.
-  * Triggered the callback in `CPercentPrinter::Print()` whenever progress updates occur.
+  * Triggered the callback in `CPercentPrinter::Print()` whenever progress updates occur, returning immediately to avoid flooding `on_log` with terminal control and percentage characters.
 
 ### 3. `third_party/7zip/CPP/7zip/UI/Console/UserInputUtils.h` & `UserInputUtils.cpp`
 * **Purpose**: Avoid blocking on `stdin` for password and overwrite prompts on iOS.
@@ -37,3 +37,8 @@ This document lists all minimal modifications made to the original 7-Zip codebas
 * **Purpose**: Allow redirecting global `g_StdOut` and `g_StdErr` streams to custom in-memory callback file streams.
 * **Changes**:
   * Added public `void AttachStdStream(FILE *stream)` and `FILE *GetStream() const` to `CStdOutStream` so archive listing (`7zz l -slt`) and all other direct `g_StdOut` outputs can be captured by UI callbacks.
+
+### 7. `third_party/7zip/C/ZstdDec.c`
+* **Purpose**: Neutralize debug `exit(1)` calls in table validation routines.
+* **Changes**:
+  * Replaced `exit(1)` with safe `return;` in `Print_Predef` table generation checks.

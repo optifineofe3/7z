@@ -9,8 +9,8 @@ GCC_PREPROCESSOR_DEFINITIONS = $(inherited) Z7_PROG_VARIANT_Z=1 _REENTRANT=1 _FI
 
 HEADER_SEARCH_PATHS = $(inherited) $(SRCROOT)/third_party/7zip $(SRCROOT)/third_party/7zip/CPP $(SRCROOT)/third_party/7zip/CPP/Common $(SRCROOT)/third_party/7zip/CPP/Windows $(SRCROOT)/third_party/7zip/CPP/7zip $(SRCROOT)/third_party/7zip/CPP/7zip/Common $(SRCROOT)/third_party/7zip/C $(SRCROOT)/Core
 
-OTHER_CFLAGS = $(inherited) -Wno-everything -fPIC
-OTHER_CPLUSPLUSFLAGS = $(inherited) -std=c++14 -Wno-everything -fPIC
+OTHER_CFLAGS = $(inherited) -Wno-everything -fPIC -march=armv8-a+crypto+crc
+OTHER_CPLUSPLUSFLAGS = $(inherited) -std=c++14 -Wno-everything -fPIC -march=armv8-a+crypto+crc
 CLANG_CXX_LANGUAGE_STANDARD = c++14
 CLANG_ENABLE_OBJC_ARC = YES
 DEAD_CODE_STRIPPING = NO

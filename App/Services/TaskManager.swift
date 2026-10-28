@@ -32,21 +32,20 @@ public final class TaskManager: ObservableObject {
     }
 
     public func cancelTask(_ task: OperationTask) {
-        for url in task.securityScopedURLs {
-            url.stopAccessingSecurityScopedResource()
-        }
-        for cleanup in task.cleanupHandlers {
-            cleanup()
-        }
-        task.securityScopedURLs.removeAll()
-        task.cleanupHandlers.removeAll()
-
         if currentActiveTask?.id == task.id {
+            // Signal 7-Zip core to abort. Do NOT release security resources or clean up yet;
+            // completion callback will release them safely once the active C++ thread finishes.
             SevenZipBridge.shared.cancel()
-            DispatchQueue.main.async {
-                task.status = .cancelled
-            }
         } else if task.status == .queued {
+            for url in task.securityScopedURLs {
+                url.stopAccessingSecurityScopedResource()
+            }
+            for cleanup in task.cleanupHandlers {
+                cleanup()
+            }
+            task.securityScopedURLs.removeAll()
+            task.cleanupHandlers.removeAll()
+
             DispatchQueue.main.async {
                 task.status = .cancelled
             }
@@ -133,8 +132,7 @@ public final class TaskManager: ObservableObject {
                     } else {
                         next.status = .failed
                         AppTheme.triggerHaptic(type: .error)
-                        let isRu = Locale.current.languageCode == "ru"
-                        let errText = SevenZipBridge.shared.errorMessage(for: exitCode, isRussian: isRu)
+                        let errText = SevenZipBridge.shared.errorMessage(for: exitCode)
                         next.errorMessage = errText
                         self.sendNotification(title: "7-Zip Error", body: "\(next.title): \(errText)")
                     }
